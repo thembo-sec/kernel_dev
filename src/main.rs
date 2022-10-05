@@ -1,6 +1,6 @@
 #![no_std]
 #![no_main]
-
+#![allow(non_snake_case)]
 use core::panic::PanicInfo;
 
 #[panic_handler]
@@ -8,7 +8,7 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
 
-static HELLO: &[u8] = b"Hello World!";
+static HELLO: &[u8] = b"Hello World! Goodbye";
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
@@ -20,7 +20,7 @@ pub extern "C" fn _start() -> ! {
         //unsafe block around memory write
         unsafe {
             *VGA_BUFFER.offset(i as isize * 2) = byte;
-            *VGA_BUFFER.offset(i as isize * 2 + 1) = 0xb;
+            *VGA_BUFFER.offset(i as isize * 2 + 1) = 0xD;
         }
     }
 
