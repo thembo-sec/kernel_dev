@@ -2,6 +2,7 @@
 #![no_main]
 #![allow(non_snake_case)]
 use core::panic::PanicInfo;
+mod VGA_BUFFER;
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
