@@ -33,3 +33,25 @@ impl ColourCode {
         ColourCode((background as u8) << 4 | (foreground as u8))
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
+struct ScreenChar {
+    ascii_character: u8,
+    colour_code: ColourCode,
+}
+
+const BUFFER_HEIGHT: usize = 25;
+const BUFFER_WIDGTH: usize = 80;
+
+#[repr(transparent)]
+struct Buffer {
+    chars: [[ScreenChar; BUFFER_WIDGTH]; BUFFER_HEIGHT],
+}
+
+// writer type for writing ASCII to the screen
+pub struct Writer {
+    column_position: usize,      //keeps track of current position in last row
+    colour_code: ColourCode,     //colours
+    buffer: &'static mut Buffer, // VGA buffer refference, explicit lifetime for whole program
+}
