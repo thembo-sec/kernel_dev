@@ -85,6 +85,7 @@ impl Writer {
     }
 
     fn new_line(&mut self) {
+        // iterate over each character in each row, and shift in one line up.
         for row in 1..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {
                 let character = self.buffer.chars[row][col].read();
@@ -96,6 +97,7 @@ impl Writer {
     }
 
     fn clear_row(&mut self, row: usize) {
+        // write an empty character into each chunk of the row
         let blank = ScreenChar {
             ascii_character: b' ',
             colour_code: self.colour_code,
@@ -109,7 +111,7 @@ impl Writer {
     pub fn write_string(&mut self, s: &str) {
         for byte in s.bytes() {
             match byte {
-                //printable ASCII byte or newline
+                // printable ASCII byte or newline
                 0x20..=0x7e | b'\n' => self.write_byte(byte),
                 // if character not supported print block byte.
                 _ => self.write_byte(0xfe),
