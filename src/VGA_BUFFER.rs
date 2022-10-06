@@ -1,4 +1,6 @@
+use core::fmt;
 use lazy_static::lazy_static;
+use spin::Mutex;
 use volatile::Volatile;
 
 #[allow(dead_code)]
@@ -62,11 +64,13 @@ pub struct Writer {
 impl Writer {
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
-            b'\n' => self.new_line(),
+            b'\n' => self.new_line(), //call newline function
             byte => {
                 if self.column_position >= BUFFER_WIDTH {
+                    //check width
                     self.new_line();
                 }
+                //else move to next position
                 let row = BUFFER_HEIGHT - 1;
                 let col = self.column_position;
 
@@ -114,10 +118,42 @@ impl Writer {
     }
 }
 
+impl fmt::Write for Writer {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.write_string(s);
+        Ok(())
+    }
+}
+
 lazy_static! {
-    pub static ref WRITER: Writer = Writer {
+    // use a spinning mutex for this to enable simple lock.
+    pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
         column_position: 0,
         colour_code: ColourCode::new(Colour::Green, Colour::Black),
+        //unsafe reference to the buffer
         buffer: unsafe { &mut *(0xb8000 as *mut Buffer) }
-    };
+    });
+}
+
+/*
+This macro expands to a call of the _print function.
+The $crate variable ensures that the macro also works from
+outside the crate by expanding when it’s used in other crates.
+*/
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ($crate::VGA_BUFFER::_print(format_args!($($arg)*)));
+}
+
+#[macro_export]
+macro_rules! println {
+    () => ($crate::print!("\n"));
+    ($($arg:tt)*)=> ($crate::print!("{}\n", format_args!($($arg)*)));
+}
+
+// This function locks our static WRITER and calls write_fmt.
+#[doc(hidden)]
+pub fn _print(args: fmt::Arguments) {
+    use core::fmt::Write;
+    WRITER.lock().write_fmt(args).unwrap();
 }
