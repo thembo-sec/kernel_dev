@@ -7,6 +7,7 @@
 
 use core::panic::PanicInfo;
 mod VGA_BUFFER;
+mod serial;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -28,7 +29,7 @@ pub extern "C" fn _start() -> ! {
 // Iterate over all tests until
 #[cfg(test)]
 fn test_runner(tests: &[&dyn Fn()]) {
-    println!("Running {} tests", tests.len());
+    serial_println!("Running {} tests", tests.len());
     for test in tests {
         test();
     }
@@ -38,9 +39,9 @@ fn test_runner(tests: &[&dyn Fn()]) {
 
 #[test_case]
 fn trivial_assertion() {
-    print!("Trivial assertion...");
+    serial_print!("Trivial assertion...");
     assert_eq!(1, 1);
-    println!("[ok]")
+    serial_println!("[ok]")
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -59,3 +60,6 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
         port.write(exit_code as u32);
     }
 }
+
+// TODO implement function to print to guest and host.
+fn print_both() {}
