@@ -25,10 +25,35 @@ pub extern "C" fn _start() -> ! {
     loop {}
 }
 
+// Iterate over all tests until
 #[cfg(test)]
 fn test_runner(tests: &[&dyn Fn()]) {
     println!("Running {} tests", tests.len());
     for test in tests {
         test();
+    }
+}
+
+#[test_case]
+fn trivial_assertion() {
+    print!("Trivial assertion...");
+    assert_eq!(1, 1);
+    println!("[ok]")
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum QemuExitCode {
+    Success = 0x10,
+    Failed = 0x11,
+}
+
+// Use port 0x4f, write exit code into qemu if exiting the kernel
+pub fn exit_qemu(exit_code: QemuExitCode) {
+    use x86_64::instructions::port::Port;
+
+    unsafe {
+        let mut port = Port::new(0x4f);
+        port.write(exit_code as u32);
     }
 }
