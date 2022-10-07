@@ -159,3 +159,36 @@ pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
     WRITER.lock().write_fmt(args).unwrap();
 }
+
+// test single printline
+#[test_case]
+fn test_println_simple() {
+    println!("Test_println_simple output")
+}
+
+//test vga buffer over many lines
+#[test_case]
+fn test_println_lots() {
+    for _ in 0..200 {
+        println!("Test_println_simple output")
+    }
+}
+
+/*
+The function defines a test string, prints it using println,
+and then iterates over the screen characters of the static WRITER,
+which represents the VGA text buffer. Since println prints to
+the last screen line and then immediately appends a newline,
+the string should appear on line BUFFER_HEIGHT - 2.
+ */
+#[test_case]
+fn test_println_output() {
+    let s = "This is a test string that prints on a single line";
+    println!("{}", s);
+    //count the number of iterations in the variable i, then
+    //use for loading the screen character corresponding to c.
+    for (i, c) in s.chars().enumerate() {
+        let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read();
+        assert_eq!(char::from(screen_char.ascii_character), c);
+    }
+}
