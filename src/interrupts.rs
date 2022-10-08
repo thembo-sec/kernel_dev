@@ -1,5 +1,7 @@
 use crate::{gdt, print, println};
 use lazy_static::lazy_static;
+use pic8259::ChainedPics;
+use spin;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 
 lazy_static! {
@@ -39,3 +41,13 @@ extern "x86-interrupt" fn double_fault_handler(
 ) -> ! {
     panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
 }
+
+// Set pic interrupt vector numbers
+// start at 32, as 0-31 are used by the CPU exceptions
+pub const PIC_1_OFFSET: u8 = 32;
+pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
+
+/// Set static mutex for pics. Wrong offsets can cause undefined behaviour
+/// so they are wrapped in an unsafe block.
+pub static PICS: spin::Mutex<ChainedPics> =
+    spin::Mutex::new(unsafe { ChainedPics::new(PIC_1_OFFSET, PIC_2_OFFSET) });
