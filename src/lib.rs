@@ -19,6 +19,7 @@ pub fn init_kernel() {
     gdt::init_gdt();
     interrupts::init_idt();
     unsafe { interrupts::PICS.lock().initialize() };
+    x86_64::instructions::interrupts::enable(); // set sti
     println!("Kernel initiased successfully.");
 }
 

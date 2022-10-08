@@ -51,3 +51,30 @@ pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
 /// so they are wrapped in an unsafe block.
 pub static PICS: spin::Mutex<ChainedPics> =
     spin::Mutex::new(unsafe { ChainedPics::new(PIC_1_OFFSET, PIC_2_OFFSET) });
+
+/*                   ____________                          ____________
+Real Time Clock --> |            |   Timer -------------> |            |
+ACPI -------------> |            |   Keyboard-----------> |            |      _____
+Available --------> | Secondary  |----------------------> | Primary    |     |     |
+Available --------> | Interrupt  |   Serial Port 2 -----> | Interrupt  |---> | CPU |
+Mouse ------------> | Controller |   Serial Port 1 -----> | Controller |     |_____|
+Co-Processor -----> |            |   Parallel Port 2/3 -> |            |
+Primary ATA ------> |            |   Floppy disk -------> |            |
+Secondary ATA ----> |____________|   Parallel Port 1----> |____________|
+*/
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+pub enum InterruptIndex {
+    Timer = PIC_1_OFFSET,
+}
+
+// Not sure if this is necessary as the enum is already as a u8?
+impl InterruptIndex {
+    fn as_u8(self) -> u8 {
+        self as u8
+    }
+
+    fn as_usize(self) -> usize {
+        usize::from(self.as_u8())
+    }
+}
