@@ -11,11 +11,17 @@ mod serial;
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
-    // Cast as a VGA buffer memory address as raw pointer
-    println!("Booting...\nI should put a little spinny guy here to look cool.");
+    println!("Booting...");
+
+    kernel_dev::init_kernel();
+    //invoke a breakpoint exception to test recovery
+    println!("Testing exception recovery...");
+
+    x86_64::instructions::interrupts::int3();
 
     #[cfg(test)]
     test_main();
+    println!("Kernel successfully recovered from breakpoint exception.");
 
     loop {}
 }
