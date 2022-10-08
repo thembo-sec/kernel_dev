@@ -5,8 +5,8 @@ use spin;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 
 lazy_static! {
-    /// define the reference for the IDT
-    /// we use lazy static as rust compiler doesn't like normal
+    /// Define the reference for the IDT.
+    /// We use lazy static as rust compiler doesn't like normal
     /// ways of creating a static reference
     static ref IDT: InterruptDescriptorTable = {
         let mut idt = InterruptDescriptorTable::new();
