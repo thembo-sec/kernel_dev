@@ -14,7 +14,19 @@ pub mod serial;
 
 /// Initialises the kernel, to be called at the entry point of main
 pub fn init_kernel() {
+    for _ in 0..10000000 {}
+
+    print!("Initialising kernel");
+    for _ in 0..1000000 {}
+    print!(".");
+    for _ in 0..1000000 {}
+    print!(".");
+    for _ in 0..1000000 {}
+    println!(".");
     interrupts::init_idt();
+    for _ in 0..10000000 {}
+    println!("Kernel intialised.");
+    for _ in 0..5000000 {}
 }
 
 /// This trait and its implmentation allows testable functions

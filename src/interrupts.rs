@@ -10,7 +10,9 @@ lazy_static! {
     };
 }
 
-pub fn init_idt() {}
+pub fn init_idt() {
+    IDT.load();
+}
 
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
     println!("EXEPTION: BREAKPOINT\n{:#?}", stack_frame);
