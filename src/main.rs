@@ -15,13 +15,9 @@ pub extern "C" fn _start() -> ! {
 
     kernel_dev::init_kernel();
     //invoke a breakpoint exception to test recovery
-    println!("Testing exception recovery...");
-
-    x86_64::instructions::interrupts::int3();
 
     #[cfg(test)]
     test_main();
-    println!("Kernel successfully recovered from breakpoint exception.");
 
     loop {}
 }

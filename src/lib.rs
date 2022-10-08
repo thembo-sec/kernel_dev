@@ -9,24 +9,16 @@
 use core::panic::PanicInfo;
 
 pub mod VGA_BUFFER;
+pub mod gdt;
 pub mod interrupts;
 pub mod serial;
 
 /// Initialises the kernel, to be called at the entry point of main
 pub fn init_kernel() {
-    for _ in 0..10000000 {}
-
-    print!("Initialising kernel");
-    for _ in 0..1000000 {}
-    print!(".");
-    for _ in 0..1000000 {}
-    print!(".");
-    for _ in 0..1000000 {}
-    println!(".");
+    println!("Initialising kernel...");
+    gdt::init_gdt();
     interrupts::init_idt();
-    for _ in 0..10000000 {}
-    println!("Kernel intialised.");
-    for _ in 0..5000000 {}
+    println!("Kernel initiased successfully.");
 }
 
 /// This trait and its implmentation allows testable functions
@@ -55,6 +47,8 @@ pub fn test_runner(tests: &[&dyn Testable]) {
     exit_qemu(QemuExitCode::Success);
 }
 
+/// This will handle test panics by printing failed and information
+/// related to the panic. It will then exit qemu.
 pub fn test_panic_handler(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n");
     serial_println!("Error: {}\n", info);
