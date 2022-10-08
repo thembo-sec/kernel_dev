@@ -3,13 +3,23 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test_runner)]
 #![allow(non_snake_case)]
+#![feature(abi_x86_interrupt)]
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
 
 pub mod VGA_BUFFER;
+pub mod interrupts;
 pub mod serial;
 
+/// Initialises the kernel, to be called at the entry point of main
+pub fn init_kernel() {
+    interrupts::init_idt();
+}
+
+/// This trait and its implmentation allows testable functions
+/// to know their own names and print them when being tested, this
+/// should save the hassle of printing 'testing...' for each one
 pub trait Testable {
     fn run(&self) -> ();
 }

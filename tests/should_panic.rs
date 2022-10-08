@@ -2,9 +2,6 @@
 
 #![no_std]
 #![no_main]
-#![feature(custom_test_frameworks)]
-#![test_runner(test_runner)]
-#![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
 use kernel_dev::{exit_qemu, serial_println, QemuExitCode, Testable};
@@ -18,11 +15,12 @@ fn panic(_info: &PanicInfo) -> ! {
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
-    test_main();
+    should_fail.run(); //use the testable trait because its easier
+    serial_println!("[test did not panic");
+    exit_qemu(QemuExitCode::Failed); //exit if tests don't panic.
     loop {}
 }
 
-#[test_case]
 fn should_fail() {
     assert_eq!(0, 1);
 }
