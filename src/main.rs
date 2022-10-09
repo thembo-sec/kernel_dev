@@ -11,7 +11,6 @@ mod VGA_BUFFER;
 mod serial;
 
 #[no_mangle]
-
 pub extern "C" fn _start() -> ! {
     println!("Booting...");
 
@@ -28,7 +27,6 @@ pub extern "C" fn _start() -> ! {
 
 #[cfg(not(test))]
 #[panic_handler]
-
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
 
@@ -37,7 +35,6 @@ fn panic(info: &PanicInfo) -> ! {
 
 #[cfg(test)]
 #[panic_handler]
-
 fn panic(info: &PanicInfo) -> ! {
     kernel_dev::test_panic_handler(info)
 }
