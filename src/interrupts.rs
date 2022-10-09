@@ -1,6 +1,5 @@
 use crate::{gdt, print, println};
 use lazy_static::lazy_static;
-use pc_keyboard::KeyCode;
 use pic8259::ChainedPics;
 use spin;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
@@ -13,6 +12,7 @@ lazy_static! {
 
         let mut idt = InterruptDescriptorTable::new();
         idt.breakpoint.set_handler_fn(breakpoint_handler);
+        idt.overflow.set_handler_fn(overflow_handler);
 
         // This is unsafe as the used index MUST be valid, otherwise the
         // exception may not trigger or be a different exception than desired.
@@ -42,6 +42,10 @@ pub fn init_idt() {
 
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
     println!("EXEPTION: BREAKPOINT\n{:#?}", stack_frame);
+}
+
+extern "x86-interrupt" fn overflow_handler(stack_frame: InterruptStackFrame) {
+    println!("EXCEPTION: OVERFLOW\n{:#?}", stack_frame);
 }
 
 /// exception handler for double faults
