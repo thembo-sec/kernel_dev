@@ -128,9 +128,8 @@ impl Writer {
         };
         // double check if the column is at 0, otherwise this will
         // cause an integer overflow.
-        if self.column_position != 0 {
-            self.column_position -= 1;
-        }
+        self.column_position -= 1;
+
         let row = BUFFER_HEIGHT - 1;
         let col = self.column_position;
         self.buffer.chars[row][col].write(blank);
