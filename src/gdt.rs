@@ -1,14 +1,18 @@
 //! Module for the global descriptor table.
 
 use lazy_static::lazy_static;
-use x86_64::structures::gdt::{Descriptor, GlobalDescriptorTable, SegmentSelector};
+use x86_64::structures::gdt::{
+    Descriptor, GlobalDescriptorTable, SegmentSelector,
+};
 use x86_64::structures::tss::TaskStateSegment;
 use x86_64::VirtAddr;
 
 /// This defines the double fault stack
+
 pub const DOUBLE_FAULT_IST_INDEX: u16 = 0;
 
 /// This struct defines our segment selectors
+
 struct Selectors {
     code_selector: SegmentSelector,
     tss_selector: SegmentSelector,
@@ -26,18 +30,24 @@ lazy_static! {
 }
 
 /// Initialise the global descriptor table
+
 pub fn init_gdt() {
+
     crate::print!("Intialising GDT...");
+
     use x86_64::instructions::segmentation::{Segment, CS};
     use x86_64::instructions::tables::load_tss;
 
     GDT.0.load(); // load the GDT
     unsafe {
+
         // reload the CPU's CS to the desired location
         CS::set_reg(GDT.1.code_selector);
+
         // tell the cpu to use the TSS in our GDT
         load_tss(GDT.1.tss_selector);
     }
+
     crate::println!("[ok]")
 }
 

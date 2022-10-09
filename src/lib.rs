@@ -16,9 +16,13 @@ pub mod serial;
 /// Initialises the kernel, to be called at the entry point of main
 pub fn init_kernel() {
     println!("Initialising kernel...");
+
     gdt::init_gdt();
+
     interrupts::init_idt();
+
     unsafe { interrupts::PICS.lock().initialize() };
+
     x86_64::instructions::interrupts::enable(); // set sti
     println!("Kernel initiased successfully.");
 }
@@ -36,16 +40,22 @@ where
 {
     fn run(&self) {
         serial_print!("{}...\t", core::any::type_name::<T>());
+
         self();
+
         serial_println!("[ok]");
     }
 }
 
+/// Will iterate over unit tests and run each one, exiting successfully
+/// if the tests do.
 pub fn test_runner(tests: &[&dyn Testable]) {
     serial_println!("Running {} tests", tests.len());
+
     for test in tests {
         test.run();
     }
+
     exit_qemu(QemuExitCode::Success);
 }
 
@@ -53,39 +63,54 @@ pub fn test_runner(tests: &[&dyn Testable]) {
 /// related to the panic. It will then exit qemu.
 pub fn test_panic_handler(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n");
+
     serial_println!("Error: {}\n", info);
+
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+
+    hlt_loop();
 }
 
 /// Entry point for `cargo test`
 #[cfg(test)]
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
+    init_kernel();
     test_main();
-    loop {}
+    hlt_loop();
 }
 
 #[cfg(test)]
 #[panic_handler]
+
 fn panic(info: &PanicInfo) -> ! {
     test_panic_handler(info)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
+
 pub enum QemuExitCode {
     Success = 0x10,
     Failed = 0x11,
 }
 
-// Use port 0x4f, write exit code into qemu if exiting the kernel
+/// Use port 0x4f, write exit code into qemu if exiting the kernel
 pub fn exit_qemu(exit_code: QemuExitCode) {
     use x86_64::instructions::port::Port;
 
     //This function is unsafe because the I/O port could have side effects that violate memory safety.
     unsafe {
         let mut port = Port::new(0xf4);
+
         port.write(exit_code as u32);
+    }
+}
+
+/// When wanting to enter a loop, use the hlt function. This minimises power
+/// use instead of the CPU spinning at max power.
+pub fn hlt_loop() -> ! {
+    loop {
+        x86_64::instructions::hlt();
     }
 }

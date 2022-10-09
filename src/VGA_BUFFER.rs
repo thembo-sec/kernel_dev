@@ -6,6 +6,7 @@ use volatile::Volatile;
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
+
 pub enum Colour {
     //store VGA colours as an enum with representation u8
     Black = 0,
@@ -29,6 +30,7 @@ pub enum Colour {
 // struct contains full colour byte including fore and back
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
+
 struct ColourCode(u8);
 
 //impl for the colourcode struct, we can move the background bitwise by four as colours only
@@ -41,23 +43,26 @@ impl ColourCode {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
+
 struct ScreenChar {
     ascii_character: u8,
     colour_code: ColourCode,
 }
 
 const BUFFER_HEIGHT: usize = 25;
+
 const BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
+
 struct Buffer {
     chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
 // writer type for writing ASCII to the screen
 pub struct Writer {
-    column_position: usize,      //keeps track of current position in last row
-    colour_code: ColourCode,     //colours
+    column_position: usize, //keeps track of current position in last row
+    colour_code: ColourCode, //colours
     buffer: &'static mut Buffer, // VGA buffer refference, explicit lifetime for whole program
 }
 
@@ -70,15 +75,19 @@ impl Writer {
                     //check width
                     self.new_line();
                 }
+
                 //else move to next position
                 let row = BUFFER_HEIGHT - 1;
+
                 let col = self.column_position;
 
                 let colour_code = self.colour_code;
+
                 self.buffer.chars[row][col].write(ScreenChar {
                     ascii_character: byte,
                     colour_code,
                 });
+
                 self.column_position += 1;
             }
         }
@@ -89,10 +98,13 @@ impl Writer {
         for row in 1..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {
                 let character = self.buffer.chars[row][col].read();
+
                 self.buffer.chars[row - 1][col].write(character);
             }
         }
+
         self.clear_row(BUFFER_HEIGHT - 1);
+
         self.column_position = 0;
     }
 
@@ -123,6 +135,7 @@ impl Writer {
 impl fmt::Write for Writer {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.write_string(s);
+
         Ok(())
     }
 }
@@ -142,32 +155,42 @@ This macro expands to a call of the _print function.
 The $crate variable ensures that the macro also works from
 outside the crate by expanding when it’s used in other crates.
 */
+
+/// Print a string, with no newline at the end of it
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::VGA_BUFFER::_print(format_args!($($arg)*)));
 }
 
+/// Print a string with newline at the end of it
 #[macro_export]
 macro_rules! println {
     () => ($crate::print!("\n"));
     ($($arg:tt)*)=> ($crate::print!("{}\n", format_args!($($arg)*)));
 }
 
-// This function locks our static WRITER and calls write_fmt.
+/// This function locks a static WRITER and calls write_fmt.
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    WRITER.lock().write_fmt(args).unwrap();
+    use x86_64::instructions::interrupts;
+    // Execute the write in a way that does not allow interrupts
+    // uring the write
+    interrupts::without_interrupts(|| {
+        WRITER.lock().write_fmt(args).unwrap();
+    });
 }
 
 // test single printline
 #[test_case]
+
 fn test_println_simple() {
     println!("Test_println_simple output")
 }
 
 //test vga buffer over many lines
 #[test_case]
+
 fn test_println_lots() {
     for _ in 0..200 {
         println!("Test_println_simple output")
@@ -181,14 +204,24 @@ which represents the VGA text buffer. Since println prints to
 the last screen line and then immediately appends a newline,
 the string should appear on line BUFFER_HEIGHT - 2.
  */
+
 #[test_case]
+
 fn test_println_output() {
+    use x86_64::instructions::interrupts;
     let s = "This is a test string that prints on a single line";
+
     println!("{}", s);
+
     //count the number of iterations in the variable i, then
     //use for loading the screen character corresponding to c.
-    for (i, c) in s.chars().enumerate() {
-        let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read();
-        assert_eq!(char::from(screen_char.ascii_character), c);
-    }
+
+    interrupts::without_interrupts(|| {
+        for (i, c) in s.chars().enumerate() {
+            let screen_char =
+                WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read();
+
+            assert_eq!(char::from(screen_char.ascii_character), c);
+        }
+    });
 }

@@ -12,12 +12,14 @@ lazy_static! {
     };
 }
 
+/// Prints a string to the host.
 #[macro_export]
 macro_rules! serial_print {
     ($($arg:tt)*) => ($crate::serial::_print(format_args!($($arg)*)));
 }
 
-// Prints to the host devide through the serial interface
+/// Prints to the host devide through the serial interface with
+/// a new line a the end of it
 #[macro_export]
 macro_rules! serial_println {
     () => ($crate::serial_print!("\n"));
@@ -26,12 +28,16 @@ macro_rules! serial_println {
         concat!($fmt, "\n"), $($arg)*));
     }
 
-// Prints to the host and appends a newline
+/// Prints to the host and appends a newline
 #[doc(hidden)]
 pub fn _print(args: ::core::fmt::Arguments) {
     use core::fmt::Write;
-    SERIAL1
-        .lock()
-        .write_fmt(args)
-        .expect("Printing to serial failed");
+    use x86_64::instructions::interrupts;
+
+    interrupts::without_interrupts(|| {
+        SERIAL1
+            .lock()
+            .write_fmt(args)
+            .expect("Printing to serial failed");
+    });
 }

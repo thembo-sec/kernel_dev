@@ -18,23 +18,30 @@ lazy_static! {
             idt.double_fault.set_handler_fn(double_fault_handler)
             .set_stack_index(gdt::DOUBLE_FAULT_IST_INDEX);
         }
+        idt[InterruptIndex::Timer.as_usize()]
+            .set_handler_fn(timer_interrupt_handler);
         idt
     };
 }
 
 /// Initialise the interrupt descriptor table
+
 pub fn init_idt() {
     print!("Initialising IDT...");
+
     IDT.load();
+
     println!("[ok]");
 }
 
 /// exception handler for breakpoints
+
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
     println!("EXEPTION: BREAKPOINT\n{:#?}", stack_frame);
 }
 
 /// exception handler for double faults
+
 extern "x86-interrupt" fn double_fault_handler(
     stack_frame: InterruptStackFrame,
     _error_code: u64,
@@ -45,10 +52,12 @@ extern "x86-interrupt" fn double_fault_handler(
 // Set pic interrupt vector numbers
 // start at 32, as 0-31 are used by the CPU exceptions
 pub const PIC_1_OFFSET: u8 = 32;
+
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
 
 /// Set static mutex for pics. Wrong offsets can cause undefined behaviour
 /// so they are wrapped in an unsafe block.
+
 pub static PICS: spin::Mutex<ChainedPics> =
     spin::Mutex::new(unsafe { ChainedPics::new(PIC_1_OFFSET, PIC_2_OFFSET) });
 
@@ -62,8 +71,10 @@ Co-Processor -----> |            |   Parallel Port 2/3 -> |            |
 Primary ATA ------> |            |   Floppy disk -------> |            |
 Secondary ATA ----> |____________|   Parallel Port 1----> |____________|
 */
+
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
+
 pub enum InterruptIndex {
     Timer = PIC_1_OFFSET,
 }
@@ -76,5 +87,19 @@ impl InterruptIndex {
 
     fn as_usize(self) -> usize {
         usize::from(self.as_u8())
+    }
+}
+
+/// This function handles the timer intrrupts that occur. It incorporates the
+/// notify end of interrupt function so that the PIC can continue to recieve
+/// interrupts after the first one.
+extern "x86-interrupt" fn timer_interrupt_handler(
+    _stack_frame: InterruptStackFrame,
+) {
+    print!(".");
+
+    unsafe {
+        PICS.lock()
+            .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
     }
 }
