@@ -120,11 +120,28 @@ impl Writer {
         }
     }
 
+    /// This function will overwrite the previous column with a blank space
+    fn backspace(&mut self) {
+        let blank = ScreenChar {
+            ascii_character: b' ',
+            colour_code: self.colour_code,
+        };
+        // double check if the column is at 0, otherwise this will
+        // cause an integer overflow.
+        if self.column_position != 0 {
+            self.column_position -= 1;
+        }
+        let row = BUFFER_HEIGHT - 1;
+        let col = self.column_position;
+        self.buffer.chars[row][col].write(blank);
+    }
+
     pub fn write_string(&mut self, s: &str) {
         for byte in s.bytes() {
             match byte {
                 // printable ASCII byte or newline
                 0x20..=0x7e | b'\n' => self.write_byte(byte),
+                0x08 => self.backspace(), //if backspace
                 // if character not supported print block byte.
                 _ => self.write_byte(0xfe),
             }
