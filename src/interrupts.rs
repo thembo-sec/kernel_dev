@@ -9,6 +9,7 @@ lazy_static! {
     /// We use lazy static as rust compiler doesn't like normal
     /// ways of creating a static reference
     static ref IDT: InterruptDescriptorTable = {
+
         let mut idt = InterruptDescriptorTable::new();
         idt.breakpoint.set_handler_fn(breakpoint_handler);
 
@@ -20,6 +21,8 @@ lazy_static! {
         }
         idt[InterruptIndex::Timer.as_usize()]
             .set_handler_fn(timer_interrupt_handler);
+        idt[InterruptIndex::Keyboard.as_usize()]
+        .set_handler_fn(keyboard_interrupt_handler);
         idt
     };
 }
@@ -49,18 +52,6 @@ extern "x86-interrupt" fn double_fault_handler(
     panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
 }
 
-// Set pic interrupt vector numbers
-// start at 32, as 0-31 are used by the CPU exceptions
-pub const PIC_1_OFFSET: u8 = 32;
-
-pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
-
-/// Set static mutex for pics. Wrong offsets can cause undefined behaviour
-/// so they are wrapped in an unsafe block.
-
-pub static PICS: spin::Mutex<ChainedPics> =
-    spin::Mutex::new(unsafe { ChainedPics::new(PIC_1_OFFSET, PIC_2_OFFSET) });
-
 /*                   ____________                          ____________
 Real Time Clock --> |            |   Timer -------------> |            |
 ACPI -------------> |            |   Keyboard-----------> |            |      _____
@@ -72,11 +63,22 @@ Primary ATA ------> |            |   Floppy disk -------> |            |
 Secondary ATA ----> |____________|   Parallel Port 1----> |____________|
 */
 
+/// Set pic interrupt vector numbers
+/// start at 32, as 0-31 are used by the CPU exceptions
+pub const PIC_1_OFFSET: u8 = 32;
+pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
+
+/// Set static mutex for pics. Wrong offsets can cause undefined behaviour
+/// so they are wrapped in an unsafe block.
+pub static PICS: spin::Mutex<ChainedPics> =
+    spin::Mutex::new(unsafe { ChainedPics::new(PIC_1_OFFSET, PIC_2_OFFSET) });
+
+/// This contains the indexes of the interrupts that will hit our PIC.
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
-
 pub enum InterruptIndex {
     Timer = PIC_1_OFFSET,
+    Keyboard,
 }
 
 // Not sure if this is necessary as the enum is already as a u8?
@@ -96,8 +98,19 @@ impl InterruptIndex {
 extern "x86-interrupt" fn timer_interrupt_handler(
     _stack_frame: InterruptStackFrame,
 ) {
+    // TODO implement this in a way that only requires a single unsafe block
+    // around an abstracted function.
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
+    }
+}
+
+extern "x86-interrupt" fn keyboard_interrupt_handler(
+    _stack_frame: InterruptStackFrame,
+) {
+    unsafe {
+        PICS.lock()
+            .notify_end_of_interrupt(InterruptIndex::Keyboard.as_u8());
     }
 }
