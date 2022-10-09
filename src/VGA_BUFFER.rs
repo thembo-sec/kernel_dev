@@ -65,7 +65,7 @@ pub struct Writer {
 }
 
 impl Writer {
-    pub fn write_byte(&mut self, byte: u8) {
+    fn write_byte(&mut self, byte: u8) {
         match byte {
             b'\n' => self.new_line(), //call newline function
             byte => {
@@ -126,7 +126,9 @@ impl Writer {
         };
         // double check if the column is at 0, otherwise this will
         // cause an integer overflow.
-        self.column_position -= 1;
+        if self.column_position > 0 {
+            self.column_position -= 1;
+        }
 
         let row = BUFFER_HEIGHT - 1;
         let col = self.column_position;
