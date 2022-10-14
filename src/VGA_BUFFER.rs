@@ -201,14 +201,12 @@ pub fn _print(args: fmt::Arguments) {
 
 // test single printline
 #[test_case]
-
 fn test_println_simple() {
     println!("Test_println_simple output")
 }
 
 //test vga buffer over many lines
 #[test_case]
-
 fn test_println_lots() {
     for _ in 0..200 {
         println!("Test_println_simple output")
@@ -224,7 +222,6 @@ the string should appear on line BUFFER_HEIGHT - 2.
  */
 
 #[test_case]
-
 fn test_println_output() {
     use x86_64::instructions::interrupts;
     let s = "This is a test string that prints on a single line";

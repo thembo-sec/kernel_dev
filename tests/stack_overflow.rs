@@ -8,9 +8,7 @@ use lazy_static::lazy_static;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 
 #[no_mangle]
-
 pub extern "C" fn _start() -> ! {
-
     serial_print!("stack_overflow::stack_overflow...\t");
 
     kernel_dev::gdt::init_gdt();
@@ -24,11 +22,9 @@ pub extern "C" fn _start() -> ! {
 
 lazy_static! {
     static ref TEST_IDT: InterruptDescriptorTable = {
-
         let mut idt = InterruptDescriptorTable::new();
 
         unsafe {
-
             idt.double_fault
                 .set_handler_fn(test_double_fault_handler)
                 .set_stack_index(kernel_dev::gdt::DOUBLE_FAULT_IST_INDEX);
@@ -42,7 +38,6 @@ extern "x86-interrupt" fn test_double_fault_handler(
     _stack_frame: InterruptStackFrame,
     _error_code: u64,
 ) -> ! {
-
     serial_println!("[ok]");
 
     exit_qemu(QemuExitCode::Success);
@@ -51,14 +46,12 @@ extern "x86-interrupt" fn test_double_fault_handler(
 }
 
 pub fn init_test_idt() {
-
     TEST_IDT.load();
 }
 
 #[panic_handler]
 
 fn panic(info: &PanicInfo) -> ! {
-
     kernel_dev::test_panic_handler(info)
 }
 
@@ -66,7 +59,6 @@ fn panic(info: &PanicInfo) -> ! {
 #[allow(unconditional_recursion)]
 
 fn stack_overflow() {
-
     stack_overflow();
 
     volatile::Volatile::new(0).read(); // stops recursion optimisations in the compiler
