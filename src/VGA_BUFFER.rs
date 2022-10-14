@@ -64,13 +64,15 @@ pub struct Writer {
     buffer: &'static mut Buffer, // VGA buffer refference, explicit lifetime for whole program
 }
 
+// TODO implement a cursor and dedicated inc/dec functions
+
 impl Writer {
     fn write_byte(&mut self, byte: u8) {
         match byte {
             b'\n' => self.new_line(), //call newline function
             byte => {
+                // if at the end of the buffer width, move to a newline
                 if self.column_position >= BUFFER_WIDTH {
-                    //check width
                     self.new_line();
                 }
 
