@@ -29,7 +29,7 @@ pub fn init_kernel() {
     println!("Kernel initiased successfully.");
 }
 
-pub fn sleep(time: u8) {
+pub fn sleep(_time: u8) {
     use x86_64::instructions::interrupts;
 }
 
@@ -82,7 +82,7 @@ entry_point!(test_kernel_main);
 
 /// Entry point for `cargo test`
 #[cfg(test)]
-fn test_kernel_main(_boot_info: &'static BootInfo) -> ! {
+fn test_kernel_main(_boot_info: &'static mut BootInfo) -> ! {
     init_kernel();
     test_main();
     hlt_loop();

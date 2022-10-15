@@ -14,18 +14,22 @@ mod VGA_BUFFER;
 mod serial;
 
 entry_point!(kernel_main);
-fn kernel_main(boot_info: &'static BootInfo) -> ! {
+fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     println!("Booting...");
 
     kernel_dev::init_kernel();
 
-    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let l4_table = unsafe { active_level_4_table(phys_mem_offset) };
+    if let Some(offset) = boot_info.physical_memory_offset.into_option() {
+        let phys_mem_offset = VirtAddr::new(offset);
+        let l4_table = unsafe { active_level_4_table(phys_mem_offset) };
 
-    for (i, entry) in l4_table.iter().enumerate() {
-        if !entry.is_unused() {
-            println!("L4 Entry {}: {:?}", i, entry);
+        for (i, entry) in l4_table.iter().enumerate() {
+            if !entry.is_unused() {
+                println!("L4 Entry {}: {:?}", i, entry);
+            }
         }
+    } else {
+        println!("No offset");
     }
 
     #[cfg(test)]
