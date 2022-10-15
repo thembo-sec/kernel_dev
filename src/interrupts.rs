@@ -113,6 +113,7 @@ pub static PICS: spin::Mutex<ChainedPics> =
 pub enum InterruptIndex {
     Timer = PIC_1_OFFSET,
     Keyboard,
+    RTC = PIC_2_OFFSET,
 }
 
 // Not sure if this is necessary as the enum is already as a u8?
@@ -179,5 +180,14 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Keyboard.as_u8());
+    }
+}
+
+extern "x86-interrupt" fn _RTC_interrupt_handler(
+    _stack_frame: InterruptStackFrame,
+) {
+    unsafe {
+        PICS.lock()
+            .notify_end_of_interrupt(InterruptIndex::RTC.as_u8());
     }
 }

@@ -6,11 +6,13 @@
 #![feature(abi_x86_interrupt)]
 #![reexport_test_harness_main = "test_main"]
 
+use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 
 pub mod VGA_BUFFER;
 pub mod gdt;
 pub mod interrupts;
+pub mod memory;
 pub mod serial;
 
 /// Initialises the kernel, to be called at the entry point of main
@@ -25,6 +27,10 @@ pub fn init_kernel() {
 
     x86_64::instructions::interrupts::enable(); // set sti
     println!("Kernel initiased successfully.");
+}
+
+pub fn sleep(time: u8) {
+    use x86_64::instructions::interrupts;
 }
 
 /// This trait and its implmentation allows testable functions
@@ -71,10 +77,12 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
     hlt_loop();
 }
 
+#[cfg(test)]
+entry_point!(test_kernel_main);
+
 /// Entry point for `cargo test`
 #[cfg(test)]
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
+fn test_kernel_main(_boot_info: &'static BootInfo) -> ! {
     init_kernel();
     test_main();
     hlt_loop();

@@ -5,18 +5,28 @@
 #![test_runner(kernel_dev::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
+use kernel_dev::memory::active_level_4_table;
+use x86_64::VirtAddr;
 
 mod VGA_BUFFER;
 mod serial;
 
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
+entry_point!(kernel_main);
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("Booting...");
 
     kernel_dev::init_kernel();
 
-    //invoke a breakpoint exception to test recovery
+    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+    let l4_table = unsafe { active_level_4_table(phys_mem_offset) };
+
+    for (i, entry) in l4_table.iter().enumerate() {
+        if !entry.is_unused() {
+            println!("L4 Entry {}: {:?}", i, entry);
+        }
+    }
 
     #[cfg(test)]
     test_main();
