@@ -1,6 +1,7 @@
 [unstable]
 build-std-features = ["compiler-builtins-mem"] # provides feautres for memory related operations
 build-std = ["core", "compiler_builtins"]
+bindeps = true
 
 [build]
 target="kernel-target.json"
