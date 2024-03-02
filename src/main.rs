@@ -7,9 +7,8 @@
 
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use kernel_dev::memory::{self};
-use x86_64::structures::paging::PageTable;
-use x86_64::{structures::paging::Translate, VirtAddr};
+use kernel_dev::memory::{self, BootInfoFrameAllocator};
+use x86_64::{structures::paging::Page, VirtAddr};
 
 mod VGA_BUFFER;
 mod serial;
@@ -21,25 +20,15 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     kernel_dev::init_kernel();
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let mapper = unsafe {
+    let mut mapper = unsafe {
         memory::init(phys_mem_offset)
     };
 
-    let addresses = [
-        // vga buffer page
-        0xb8000,
-        0x201008,
-        0x0100_0020_1a10,
-        boot_info.physical_memory_offset,
-        // virt address mapped to physical adress 0
-    ];
+    let mut frame_allocator = unsafe {
+        BootInfoFrameAllocator::init(&boot_info.memory_map)
+    };
 
-    for &address in &addresses {
-        let virt = VirtAddr::new(address);
-        // new: use the `mapper.translate_addr` method
-        let phys = mapper.translate_addr(virt);
-        println!("{:?} -> {:?}", virt, phys);
-    }
+    
 
     #[cfg(test)]
     test_main();

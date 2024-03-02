@@ -1,3 +1,4 @@
+use bootloader::bootinfo::{MemoryMap, MemoryRegionType};
 use x86_64::{
     structures::paging::{
         FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PhysFrame, Size4KiB,
@@ -17,6 +18,51 @@ pub struct EmptyFrameAllocator;
 unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
     fn allocate_frame(&mut self) -> Option<PhysFrame<Size4KiB>> {
         None
+    }
+}
+
+/// Frame allocator that returns empty frames from the bootloaders
+/// memory map.
+pub struct BootInfoFrameAllocator {
+    memory_map: &'static MemoryMap,
+    next: usize,
+}
+
+impl BootInfoFrameAllocator {
+    /// Create a frame allocator from the passed memory map.
+    ///
+    /// This function is unsafe because the caller must guarantee that the passed
+    /// memory map is valid. This requires all usable frames to be correctly marked
+    /// as such.
+    pub unsafe fn init(memory_map: &'static MemoryMap) -> Self {
+        BootInfoFrameAllocator {
+            memory_map,
+            next: 0,
+        }
+    }
+
+    /// Returns an interator over the usable frames specified in the memory map.
+    fn usable_frames(&self) -> impl Iterator<Item = PhysFrame> {
+        // Get only the regions that are usable from the memory map.
+        let regions = self.memory_map.iter();
+        let usable_regions = regions.filter(|r| r.region_type == MemoryRegionType::Usable);
+
+        // map regions to address ranges.
+        let addr_ranges = usable_regions.map(|r| r.range.start_addr()..r.range.end_addr());
+
+        // Transform the ranges to the frame addresses.
+        let frame_addresses = addr_ranges.flat_map(|r| r.step_by(4096));
+        
+        // Create PhysFrames from the start addresses.
+        frame_addresses.map(|addr| PhysFrame::containing_address(PhysAddr::new(addr)))
+    }
+}
+
+unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
+    fn allocate_frame(&mut self) -> Option<PhysFrame<Size4KiB>> {
+        let frame = self.usable_frames().nth(self.next);
+        self.next+=1;
+        frame
     }
 }
 
