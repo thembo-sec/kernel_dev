@@ -5,10 +5,13 @@
 #![test_runner(kernel_dev::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+extern crate alloc;
+
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 use kernel_dev::memory::{self, BootInfoFrameAllocator};
 use x86_64::{structures::paging::Page, VirtAddr};
+use alloc::boxed::Box;
 
 mod VGA_BUFFER;
 mod serial;
@@ -18,6 +21,8 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("Booting...");
 
     kernel_dev::init_kernel();
+
+    let alloc = Box::new(41);
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe {

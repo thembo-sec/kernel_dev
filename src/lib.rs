@@ -9,8 +9,11 @@
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 
+extern crate alloc;
+
 pub mod VGA_BUFFER;
 pub mod gdt;
+pub mod allocator;
 pub mod interrupts;
 pub mod memory;
 pub mod serial;
