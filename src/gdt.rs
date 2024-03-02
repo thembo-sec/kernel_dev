@@ -48,7 +48,7 @@ pub fn init_gdt() {
         load_tss(GDT.1.tss_selector);
     }
 
-    crate::println!("[ok]")
+    crate::println!("[ok]");
 }
 
 lazy_static! {
