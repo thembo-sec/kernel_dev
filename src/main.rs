@@ -29,24 +29,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
     // new
-    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
-
-    let hv = Box::new(41);
-    println!("Heap value at: {:p}", hv);
-
-    let mut vec = Vec::new();
-    for i in 0..100{
-        vec.push(i);
-    }
-    println!("Vec at {:p}", vec.as_slice());
-
-
-    let ref_c = Rc::new(vec![1,2,3]);
-    let cloned_ref = ref_c.clone();
-    println!("Current reference counted is: {}", Rc::strong_count(&cloned_ref));
-    core::mem::drop(ref_c);
-    println!("Ref dropped, new ref count is: {}", Rc::strong_count(&cloned_ref));
-    
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");    
     
     #[cfg(test)]
     test_main();
