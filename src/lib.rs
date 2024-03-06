@@ -4,6 +4,7 @@
 #![test_runner(crate::test_runner)]
 #![allow(non_snake_case)]
 #![feature(abi_x86_interrupt)]
+#![feature(const_mut_refs)]
 #![reexport_test_harness_main = "test_main"]
 
 use bootloader::{entry_point, BootInfo};
@@ -40,6 +41,7 @@ pub fn sleep(time: u8) {
 /// to know their own names and print them when being tested, this
 /// should save the hassle of printing 'testing...' for each one
 pub trait Testable {
+    /// Allow the type to run itself.
     fn run(&self) -> ();
 }
 
