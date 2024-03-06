@@ -1,7 +1,8 @@
 use alloc::alloc::{GlobalAlloc, Layout};
+use crate::println;
 use core::ptr::null_mut;
 use fixed_size_block::FixedSizeBlockAllocator;
-use linked_list_allocator::LockedHeap;
+
 use x86_64::{
     structures::paging::{
         mapper::MapToError, FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB,
@@ -10,12 +11,9 @@ use x86_64::{
 };
 
 pub mod bump;
-pub mod linked_list;
 pub mod fixed_size_block;
+pub mod linked_list;
 
-use crate::println;
-
-use self::linked_list::LinkedListAllocator;
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;
 pub const HEAP_SIZE: usize = 100 * 1024; // 100KiB
@@ -48,6 +46,7 @@ pub fn init_heap(
     frame_allocator: &mut impl FrameAllocator<Size4KiB>,
 ) -> Result<(), MapToError<Size4KiB>> {
     crate::print!("Initializing Heap...");
+
     let page_range = {
         let heap_start = VirtAddr::new(HEAP_START as u64);
         let heap_end = heap_start + HEAP_SIZE - 1u64;
