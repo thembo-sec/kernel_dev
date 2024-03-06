@@ -1,5 +1,6 @@
 use alloc::alloc::{GlobalAlloc, Layout};
 use core::ptr::null_mut;
+use fixed_size_block::FixedSizeBlockAllocator;
 use linked_list_allocator::LockedHeap;
 use x86_64::{
     structures::paging::{
@@ -8,13 +9,36 @@ use x86_64::{
     VirtAddr,
 };
 
+pub mod bump;
+pub mod linked_list;
+pub mod fixed_size_block;
+
 use crate::println;
+
+use self::linked_list::LinkedListAllocator;
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;
 pub const HEAP_SIZE: usize = 100 * 1024; // 100KiB
 
 #[global_allocator]
-static ALLOCATOR: LockedHeap = LockedHeap::empty();
+static ALLOCATOR: Locked<FixedSizeBlockAllocator> = Locked::new(FixedSizeBlockAllocator::new());
+
+/// A wrapper around a spin::Mutex to permit trait implementations
+pub struct Locked<A> {
+    inner: spin::Mutex<A>,
+}
+
+impl<A> Locked<A> {
+    pub const fn new(inner: A) -> Self {
+        Locked {
+            inner: spin::Mutex::new(inner),
+        }
+    }
+
+    pub fn lock(&self) -> spin::MutexGuard<A> {
+        self.inner.lock()
+    }
+}
 
 /// Initialise the heap memory stack
 ///
@@ -23,7 +47,7 @@ pub fn init_heap(
     mapper: &mut impl Mapper<Size4KiB>,
     frame_allocator: &mut impl FrameAllocator<Size4KiB>,
 ) -> Result<(), MapToError<Size4KiB>> {
-    println!("Initializing Heap...");
+    crate::print!("Initializing Heap...");
     let page_range = {
         let heap_start = VirtAddr::new(HEAP_START as u64);
         let heap_end = heap_start + HEAP_SIZE - 1u64;
@@ -45,10 +69,17 @@ pub fn init_heap(
     }
 
     unsafe {
-        ALLOCATOR.lock().init(HEAP_START as *mut u8, HEAP_SIZE);
+        ALLOCATOR.lock().init(HEAP_START, HEAP_SIZE);
     }
     println!("[ok]");
     Ok(())
+}
+
+/// Align the given address `addr` upwards to alignment `align`.
+///
+/// Requires that `align` is a power of two.
+fn align_up(addr: usize, align: usize) -> usize {
+    (addr + align - 1) & !(align - 1)
 }
 
 pub struct Dummy;
