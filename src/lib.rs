@@ -18,6 +18,7 @@ pub mod allocator;
 pub mod interrupts;
 pub mod memory;
 pub mod serial;
+pub mod task;
 
 /// Initialises the kernel, to be called at the entry point of main
 pub fn init_kernel() {
