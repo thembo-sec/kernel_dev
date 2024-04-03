@@ -7,11 +7,12 @@
 
 extern crate alloc;
 
-use alloc::{boxed::Box, vec, vec::Vec, rc::Rc};
+use alloc::{boxed::Box, rc::Rc, vec, vec::Vec};
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 use kernel_dev::allocator;
 use kernel_dev::memory::{self, BootInfoFrameAllocator};
+use kernel_dev::task::{simple_executor::SimpleExecutor, Task};
 use x86_64::{structures::paging::Page, VirtAddr};
 
 mod VGA_BUFFER;
@@ -29,13 +30,26 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
     // new
-    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");    
-    
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
+
+    let mut executor = SimpleExecutor::new();
+    executor.spawn(Task::new(example_task()));
+    executor.run();
+
     #[cfg(test)]
     test_main();
 
     println!("Successfully booted.");
     kernel_dev::hlt_loop();
+}
+
+async fn async_number() -> u32 {
+    42
+}
+
+async fn example_task(){
+    let number = async_number().await;
+    println!("Async number {}", number);
 }
 
 #[cfg(not(test))]

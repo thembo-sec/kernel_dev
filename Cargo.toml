@@ -28,6 +28,11 @@ harness = false
 version = "1.0"
 features = ["spin_no_std"]
 
+[dependencies.crossbeam-queue]
+version="0.2.1"
+default-features = false
+features = ["alloc"]
+
 # qemu test args that enable exit from the guest kernel
 [package.metadata.bootimage]
 test-args = [

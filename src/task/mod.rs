@@ -4,6 +4,7 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
+pub mod simple_executor;
 
 /// Task structure.
 ///
@@ -22,7 +23,11 @@ impl Task {
             future: Box::pin(future),
         }
     }
-
+    /// Since the poll method of the Future trait expects to be called on a Pin<&mut T> type, 
+    /// we use the Pin::as_mut method to convert the self.future field of type Pin<Box<T>> first. 
+    /// Then we call poll on the converted self.future field and return the result. 
+    /// Since the Task::poll method should only be called by the executor that we’ll create in a moment, 
+    /// we keep the function private to the task module.
     fn poll(&mut self, context: &mut Context) -> Poll<()>{
         self.future.as_mut().poll(context)
     }
